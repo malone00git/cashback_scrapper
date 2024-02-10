@@ -1,0 +1,20 @@
+{
+    "BUCKET_NAME": "known_cashback_cards",
+    "CHASE_FLEX_URL": "https://creditcards.chase.com/cash-back-credit-cards/freedom/flex",
+    "CLICK_HIDDEN_MODAL": "arguments[0].click();",
+    "FILE_NAME": "categories.txt",
+    "FIND_BENEFITS_CATEGORIES": "p.bonus-text",
+    "FIND_BENEFITS_CONTAINER": "container-fluid",
+    "FIND_BENEFITS_MODAL": "a[data-show-modal='benefitsModal']",
+    "FIND_BENEFITS_MONTH_RANGE": "h4.m-4",
+    "FIND_BENEFITS_YEAR": "p.activate-text",
+    "FOLDER_NAME": "chase_flex",
+    "HTML_PARSER": "html.parser",
+    "LOCAL_FILE_CATEGORIES": "chase_flex_categories.txt",
+    "LOCAL_FILE_QUARTERS": "chase_flex_quarters.txt",
+    "MONTH_YEAR_PATTERN": "([A-Za-z]+) – ([A-Za-z]+) (\\d{4})",
+    "REPLACE_THIS_STRING_1": "Same page link to footnote terms and conditions reference",
+    "SUP_FILE_PATH_CATEGORIES": "chase_flex/categories.txt",
+    "SUP_FILE_PATH_QUARTERS": "chase_flex/quarters.txt",
+    "UNKNOWN_CATEGORY": "Coming Soon"
+}

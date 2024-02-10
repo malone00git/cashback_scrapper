@@ -1,0 +1,18 @@
+{
+    "BUCKET_NAME": "known_cashback_cards",
+    "CLASS_OFFER_QUARTER": "offer-quarter",
+    "FILE_NAME": "categories.txt",
+    "FOLDER_NAME": "discover_it",
+    "HTML_PARSER": "html.parser",
+    "LOCAL_FILE_CATEGORIES": "discover_it_categories.txt",
+    "LOCAL_FILE_QUARTERS": "discover_it_quarters.txt",
+    "MONTH_YEAR_PATTERN": "([A-Za-z]+) to ([A-Za-z]+) (\\d{4})",
+    "OFFER_NAME_TAG_CLASS": "h3.offer-name",
+    "OFFER_QUARTER_TAG_CLASS": "h2.offer-quarter",
+    "ON_TAG_CLASS": "h3.offer-name",
+    "OQ_TAG_CLASS": "h2.offer-quarter",
+    "SUP_FILE_PATH_CATEGORIES": "discover_it/categories.txt",
+    "SUP_FILE_PATH_QUARTERS": "discover_it/quarters.txt",
+    "UNKNOWN_CATEGORY": "Coming Soon",
+    "URL_TO_SCRAPE": "https://www.discover.com/credit-cards/cash-back/cashback-calendar.html"
+}

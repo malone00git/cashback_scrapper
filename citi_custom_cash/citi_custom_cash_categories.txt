@@ -1,0 +1,11 @@
+5
+Restaurants
+Gas Stations
+Grocery Stores
+Select Travel
+Select Transit
+Select Streaming Services
+Drugstores
+Home Improvement Stores
+Fitness Clubs
+Live Entertainment
