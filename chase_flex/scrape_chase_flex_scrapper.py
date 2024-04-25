@@ -60,7 +60,6 @@ if response.status_code == 200:
         for data in benefit_months_list:
             months_part = data
             date_text = months_part + " " + year_part
-            print(date_text)
             f.write(date_text.encode())
             f.write(b"\n")
 
@@ -112,5 +111,8 @@ if response.status_code == 200:
 
 else:
     # handle the error
+    # this will give you just the file name
+    file_name = os.path.basename(__file__)
+    email_scrape_failed.curr_file_and_err_code(file_name, response.status_code)
     email_scrape_failed.send_email()
 

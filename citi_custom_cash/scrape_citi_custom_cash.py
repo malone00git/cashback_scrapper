@@ -66,4 +66,7 @@ if response.status_code == 200:
 
 else:
     # handle the error
+    # this will give you just the error
+    file_name = os.path.basename(__file__)
+    email_scrape_failed.curr_file_and_err_code(file_name, response.status_code)
     email_scrape_failed.send_email()

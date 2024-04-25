@@ -71,27 +71,21 @@ if response.status_code == 200:
     earn_percentage = soup.select('span.text-color-usbankblue')
     earn_percentage_list = [earn.get_text().strip() for earn in earn_percentage]
     earn_percentage_list = [element for element in earn_percentage_list if element[0].isnumeric()]
-    print(earn_percentage_list)
 
     top_categories_1 = soup.select('div.category-five')
     top_category_list_1 = [category.get_text().strip().split('\n') for category in top_categories_1]
     top_category_list_1 = top_category_list_1[0]
-    print(top_category_list_1)
 
     top_categories_2 = soup.select('div.cashPusIconList')
     top_category_list_2 = [category.get_text().strip().split('\n') for category in top_categories_2]
     top_category_list_2 = top_category_list_2[0]
-    print(top_category_list_2)
 
     two_percent_categories = soup.select('div.category-two')
     two_percent_category_list = [category.get_text().strip().split('\n') for category in two_percent_categories]
     two_percent_category_list = two_percent_category_list[0]
-    print(two_percent_category_list)
     two_percent_category_list = combine_list(two_percent_category_list)
-    print(two_percent_category_list)
     two_percent_category_list = [category for category in two_percent_category_list if category[0].isalpha()]
     two_percent_category_list = filter_list(two_percent_category_list)
-    print(two_percent_category_list)
 
     with open(local_file_categories, 'wb') as f:
         top_percent = earn_percentage_list[0]
@@ -124,6 +118,9 @@ if response.status_code == 200:
             supabase.storage.from_(bucket_name).upload(file=f, path=sup_file_path_categories,
                                                        file_options={'content-type': 'text/plain', 'upsert': 'true'})
 
-
 else:
+    # handle the error
+    # this will give you just the file name
+    file_name = os.path.basename(__file__)
+    email_scrape_failed.curr_file_and_err_code(file_name, response.status_code)
     email_scrape_failed.send_email()

@@ -1,4 +1,3 @@
-# Import the required modules
 import os
 import json
 from supabase import create_client, Client
@@ -22,8 +21,8 @@ file_name = strings["FILE_NAME"]
 html_parser = strings["HTML_PARSER"]
 
 # Initialize the supabase client with url and key
-url = os.environ.get("SUPABASE_URL")
-key = os.environ.get("SUPABASE_KEY")
+key = os.getenv('SUPABASE_KEY')
+url = os.getenv('SUPABASE_URL')
 supabase: Client = create_client(url, key)
 
 scraping_ant_token = os.getenv('SCRAPING_ANT_TOKEN')
@@ -39,7 +38,6 @@ if response.status_code == 200:
     # Find all the h2 tags with class "offer-quarter"
     quarter_dates = soup.select(offer_quarter_tag_class)
     quarter_dates_list = [quarter_date.getText() for quarter_date in quarter_dates]
-    print(quarter_dates_list)
 
     # Create or get a file
 
@@ -71,12 +69,10 @@ if response.status_code == 200:
     # Find all the h3 tags with class "offer-name"
     categories = soup.select(offer_name_tag_class)
     categories_list = [category.getText() for category in categories]
-    print(categories_list)
 
     # Open a file named "discover_categories.txt" for writing using try-with-resources
     with open(local_file_categories, "wb") as f:
         for data in categories_list:
-            print(data)
             f.write(data.encode())
             f.write(b"\n")
 
@@ -103,5 +99,8 @@ if response.status_code == 200:
         os.remove(local_file_categories)
 
 else:
-    # Handle the error
+    # handle the error
+    # this will give you just the file name
+    file_name = os.path.basename(__file__)
+    email_scrape_failed.curr_file_and_err_code(file_name, response.status_code)
     email_scrape_failed.send_email()
