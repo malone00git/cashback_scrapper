@@ -40,9 +40,9 @@ def send_email():
     # connect to Gmail's SMTP server
     try:
         with smtplib.SMTP('smtp.gmail.com', 587) as server:
-            server.starttls()  # Secure the connection
-            server.login(sender_email, password)  # Log in to the email account
-            server.send_message(email)  # Send the email
+            server.starttls()  # secure the connection
+            server.login(sender_email, password)  # log in to the email account
+            server.send_message(email)  # send the email
     except smtplib.SMTPException as e:
         print(f'Failed to send email: {e}')
 
