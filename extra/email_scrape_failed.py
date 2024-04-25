@@ -7,7 +7,7 @@ file_name = ''
 error_code = ''
 
 
-# Takes in file name and response error code form the .py scrape file that failed to scrape a website
+# Takes in file name and response error code from the scrape file that failed to scrape a website
 def curr_file_and_err_code(name, code):
     global file_name
     global error_code
