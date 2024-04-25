@@ -1,9 +1,9 @@
 import os
 import json
-import http.client
-import urllib.parse
 from supabase import create_client, Client
+from scrapingant_client import ScrapingAntClient
 from bs4 import BeautifulSoup
+from extra import email_scrape_failed
 
 
 # strip categories within the list of unnecessary symbols, punctuation, and words
@@ -41,26 +41,14 @@ url = os.getenv('SUPABASE_URL')
 key = os.getenv('SUPABASE_KEY')
 supabase: Client = create_client(url, key)
 
-# api_key = os.getenv('API_KEY')
-# api_url = os.getenv('API_URL')
+scraping_ant_token = os.getenv('SCRAPING_ANT_TOKEN')
+client = ScrapingAntClient(token=scraping_ant_token)
+response = client.general_request(credit_card_url)
 
-ant_api_key = os.getenv('ANT_API_KEY')
-ant_api_url_1 = os.getenv('ANT_API_URL_1')
-ant_api_url_2 = os.getenv('ANT_API_URL_2')
-
-conn = http.client.HTTPSConnection(ant_api_url_1)
-payload = {'url': credit_card_url, 'x-api-key': ant_api_key}
-query = urllib.parse.urlencode(payload)
-conn.request('GET', ant_api_url_2 + query)
-response = conn.getresponse()
-
-# payload = {'api_key': api_key, 'url': credit_card_url, 'render': 'true'}
-# response = requests.get(api_url, params=payload)
-
-if response.status == 200:
+if response.status_code == 200:
 
     # seek out the necessary data from the website and scrap it
-    soup = BeautifulSoup(response.read(), html_parser)
+    soup = BeautifulSoup(response.content, html_parser)
     benefit_months = soup.select(find_benefits_month_range)
     benefit_months_list = [benefit_month.getText() for benefit_month in benefit_months]
     benefit_year_data = soup.select_one(find_benefits_year)
@@ -124,4 +112,5 @@ if response.status == 200:
 
 else:
     # handle the error
-    print(f"Request failed with status code {response.status}")
+    email_scrape_failed.send_email()
+

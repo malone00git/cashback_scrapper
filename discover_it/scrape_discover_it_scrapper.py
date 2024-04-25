@@ -1,10 +1,10 @@
 # Import the required modules
 import os
-import urllib.parse
 import json
-import http.client
 from supabase import create_client, Client
+from scrapingant_client import ScrapingAntClient
 from bs4 import BeautifulSoup
+from extra import email_scrape_failed
 
 with open("../discover_it_strings.json", "r") as f:
     strings = json.load(f)
@@ -26,28 +26,15 @@ url = os.environ.get("SUPABASE_URL")
 key = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(url, key)
 
-# Setup scraper API call using requests
-# api_key = os.getenv("API_KEY")
-# api_url = os.getenv("API_URL")
-
-ant_api_key = os.getenv('ANT_API_KEY')
-ant_api_url_1 = os.getenv('ANT_API_URL_1')
-ant_api_url_2 = os.getenv('ANT_API_URL_2')
-
-conn = http.client.HTTPSConnection(ant_api_url_1)
-payload = {'url': credit_card_url, 'x-api-key': ant_api_key}
-query = urllib.parse.urlencode(payload)
-conn.request('GET', ant_api_url_2 + query)
-response = conn.getresponse()
-
-# payload = {"api_key": api_key, "url": credit_card_url, "render": "true"}
-# response = requests.get(api_url, params=payload)
+scraping_ant_token = os.getenv('SCRAPING_ANT_TOKEN')
+client = ScrapingAntClient(token=scraping_ant_token)
+response = client.general_request(credit_card_url)
 
 # Check if the request was successful
-if response.status == 200:
+if response.status_code == 200:
 
     # Parse the HTML content using BeautifulSoup
-    soup = BeautifulSoup(response.read(), html_parser)
+    soup = BeautifulSoup(response.content, html_parser)
 
     # Find all the h2 tags with class "offer-quarter"
     quarter_dates = soup.select(offer_quarter_tag_class)
@@ -117,4 +104,4 @@ if response.status == 200:
 
 else:
     # Handle the error
-    print(f"Request failed with status code {response.status}")
+    email_scrape_failed.send_email()

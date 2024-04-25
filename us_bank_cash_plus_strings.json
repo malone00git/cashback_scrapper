@@ -1,0 +1,9 @@
+{
+    "BUCKET_NAME": "known_cashback_cards",
+    "FOLDER_NAME": "us_bank_cash_plus",
+    "HTML_PARSER": "html.parser",
+    "LOCAL_FILE_CATEGORIES": "us_bank_cash_plus.txt",
+    "PERCENT_PATTERN": "\\d+%",
+    "SUP_FILE_PATH_CATEGORIES": "us_bank_cash_plus/categories.txt",
+    "US_BANK_CASH_PLUS_URL": "https://www.usbank.com/credit-cards/cash-plus-visa-signature-credit-card.html"
+}
