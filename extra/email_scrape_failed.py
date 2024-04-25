@@ -7,7 +7,7 @@ file_name = ''
 error_code = ''
 
 
-# Takes in file name and response error code from the scrape file that failed to scrape a website
+# takes in file name and response error code from the scrape file that failed to scrape a website
 def curr_file_and_err_code(name, code):
     global file_name
     global error_code
@@ -15,7 +15,7 @@ def curr_file_and_err_code(name, code):
     error_code = code
 
 
-# Function to send email with file_name and response error code
+# function to send email with file_name and response error code
 def send_email():
     global file_name
     global error_code
@@ -26,18 +26,18 @@ def send_email():
     receiver_email = email
     password = password
 
-    # Create the email head (sender, receiver, and subject)
+    # create the email head (sender, receiver, and subject)
     email = MIMEMultipart()
     email['From'] = sender_email
     email['To'] = receiver_email
     email['Subject'] = 'Alert: status code is not 200'
 
-    # Email body
+    # email body
     message = 'File name: ' + file_name + '\n'
     message += 'Error code: ' + error_code + '\n'
     email.attach(MIMEText(message, 'plain'))
 
-    # Connect to Gmail's SMTP server
+    # connect to Gmail's SMTP server
     try:
         with smtplib.SMTP('smtp.gmail.com', 587) as server:
             server.starttls()  # Secure the connection
