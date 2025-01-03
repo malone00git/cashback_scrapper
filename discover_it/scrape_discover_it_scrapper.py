@@ -1,7 +1,7 @@
 import os
 import json
-from supabase import create_client, Client
 from scrapingant_client import ScrapingAntClient
+from supabase import create_client, Client
 from bs4 import BeautifulSoup
 from extra import email_scrape_failed
 
@@ -73,6 +73,7 @@ if response.status_code == 200:
     # Open a file named "discover_categories.txt" for writing using try-with-resources
     with open(local_file_categories, "wb") as f:
         for data in categories_list:
+            data = data.strip()
             f.write(data.encode())
             f.write(b"\n")
 
@@ -90,13 +91,13 @@ if response.status_code == 200:
                                                        file_options={"content_type": "text/plain", "upsert": "true"})
 
     # Use a try-finally block to delete the files
-    try:
+    # try:
         # Do something with the files
-        pass
-    finally:
+        # pass
+    # finally:
         # Delete the files
-        os.remove(local_file_quarters)
-        os.remove(local_file_categories)
+        # os.remove(local_file_quarters)
+        # os.remove(local_file_categories)
 
 else:
     # handle the error

@@ -1,10 +1,11 @@
-import csv
-import os
-import datetime
 import calendar
-import re
+import csv
+import datetime
 import json
+import os
+import re
 from supabase import create_client, Client
+from extra.extract_places import parse_category
 
 with open('../chase_flex_strings.json', 'r') as f:
     strings = json.load(f)
@@ -52,57 +53,72 @@ with open(local_file_quarters) as f:
                 formatted_dates.append([start_date, end_date])
 
 # retrieve the id and card names from their respective columns
-known_cards = supabase.table('known_credit_card').select('id', 'known_card_name').execute()
+known_cards = supabase.table('known_credit_card').select('kcc_id', 'known_card_name').execute()
 known_cards = known_cards.data  # extract the dictionary from the tuple
 card_exists = 'Chase Freedom Flex' in map(lambda d: d['known_card_name'], known_cards)
 
 # if card exists, retrieve its row within the table
 if card_exists:
     card_dict = next(filter(lambda d: d['known_card_name'] == 'Chase Freedom Flex', known_cards))
-    kcc_id = card_dict['id']
+    kcc_id = card_dict['kcc_id']
 else:  # else create a new row and retrieve its id
     data1, count = supabase.table('known_credit_card').insert({'known_card_name': 'Chase Freedom Flex',
-                                                               'kb_id': 5, 'kn_id': 2}).execute()
-    kcc_id = data1[1][0]['id']
+                                                               'kb_id': 1, 'kn_id': 2}).execute()
+    kcc_id = data1[1][0]['kcc_id']
 
-# open local file categories extract categories and add their respective date ranges to the database
-with open(local_file_categories) as f:
-    reader = csv.reader(f)
-    index = 0
-    for row in reader:  # for each line within the file
-        if row[0] != unknown_category:  # skip 'Coming soon' rows
-            start_month = formatted_dates[index][0]
-            end_month = formatted_dates[index][1]
+# Reads all lines into a list
+with open(local_file_categories, 'r') as f:
+    lines = f.readlines()
 
-            # extract and convert date format within formatted_date list to match that of the database's format
-            start_date_obj = datetime.datetime.strptime(start_month, '%m/%d/%Y')
-            converted_start_month = start_date_obj.strftime('%Y-%m-%d')
+# Process each line by splitting based on "|" character
+formatted_lines = []
+for line in lines:
+    split_line = [item.strip() for item in line.strip().split("|")]
+    formatted_lines.append(split_line)
 
-            end_date_obj = datetime.datetime.strptime(end_month, '%m/%d/%Y')
-            converted_end_month = end_date_obj.strftime('%Y-%m-%d')
+# extract known dates from the database
+known_categories = supabase.table('known_category_detail').select('kcc_id', 'cat_name',
+                                                                  'start_date', 'end_date').execute().data
+kcc_id_exists = kcc_id in map(lambda d: d['kcc_id'], known_categories)
 
-            # extract known dates from the database
-            known_category_data = supabase.table('category').select('kcc_id', 'start_date', 'end_date').execute()
-            known_category_data = known_category_data.data
+index = 0
+for split_line in formatted_lines:  # for each line within the file
+    if split_line[0] != unknown_category:  # skip 'Coming soon' rows
+        start_month = formatted_dates[index][0]
+        end_month = formatted_dates[index][1]
 
-            # check to see if the id, start, and end date exists within the database
-            start_exists = converted_start_month in map(lambda d: d['start_date'], known_category_data)
-            end_exists = converted_end_month in map(lambda d: d['end_date'], known_category_data)
-            id_exists = kcc_id in map(lambda d: d['kcc_id'], known_category_data)
+        # extract and convert date format within formatted_date list to match that of the database's format
+        start_date_obj = datetime.datetime.strptime(start_month, '%m/%d/%Y')
+        converted_start_month = start_date_obj.strftime('%Y-%m-%d')
 
-            # if kcc_id, start date, and end date exists within category table do not insert
-            if start_exists and end_exists and id_exists:
+        end_date_obj = datetime.datetime.strptime(end_month, '%m/%d/%Y')
+        converted_end_month = end_date_obj.strftime('%Y-%m-%d')
+
+        # check to see if the kcc_id, start, and end date exists within the database
+        start_exists = converted_start_month in map(lambda d: d['start_date'], known_categories)
+        end_exists = converted_end_month in map(lambda d: d['end_date'], known_categories)
+
+        # Process the split line items.
+        # Each item separated by a comma will be inserted as a category item
+        for i in range(len(split_line)):
+            cat_exists = split_line[i] in map(lambda d: d['cat_name'], known_categories)
+            if start_exists and end_exists and kcc_id_exists and cat_exists:
                 pass
-            else:  # else insert new category
-                # if the current contains the '|' symbol split the categories of this row into subcategories
-                this_row_list = row[0].split('|')
-                for i in range(len(this_row_list)):
-                    data2, count = supabase.table('category_name').insert(
-                        {'cat_name': this_row_list[i].strip()}).execute()
-                    cn_id = data2[1][0]['id']
-                    supabase.table('category').insert({'kcc_id': kcc_id, 'cn_id': cn_id, 'cat_percentage': 5,
-                                                       'start_date': start_month, 'end_date': end_month}).execute()
-        index += 1
+            else:
+                places_found = parse_category(split_line[i].strip())
+                # Convert the "list representation of a string" to a comma-separated string
+                place_types_string = ', '.join(places_found)
+                supabase.table('known_category_detail').upsert(
+                    {
+                        'kcc_id': kcc_id,
+                        'cat_name': split_line[i].strip(),
+                        'cat_percentage': 5,
+                        'start_date': converted_start_month,
+                        'end_date': converted_end_month,
+                        'place_type': place_types_string
+                    },
+                    on_conflict="kcc_id, cat_name, start_date, end_date").execute()
+    index += 1
 try:
     pass
 finally:

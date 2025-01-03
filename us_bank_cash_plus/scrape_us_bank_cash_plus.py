@@ -71,12 +71,13 @@ if response.status_code == 200:
     earn_percentage = soup.select('span.text-color-usbankblue')
     earn_percentage_list = [earn.get_text().strip() for earn in earn_percentage]
     earn_percentage_list = [element for element in earn_percentage_list if element[0].isnumeric()]
+    print(earn_percentage_list)
 
     top_categories_1 = soup.select('div.category-five')
     top_category_list_1 = [category.get_text().strip().split('\n') for category in top_categories_1]
     top_category_list_1 = top_category_list_1[0]
 
-    top_categories_2 = soup.select('div.cashPusIconList')
+    top_categories_2 = soup.select('div.cashPusIconList1')
     top_category_list_2 = [category.get_text().strip().split('\n') for category in top_categories_2]
     top_category_list_2 = top_category_list_2[0]
 
@@ -88,24 +89,27 @@ if response.status_code == 200:
     two_percent_category_list = filter_list(two_percent_category_list)
 
     with open(local_file_categories, 'wb') as f:
-        top_percent = earn_percentage_list[0]
-        f.write(top_percent.encode('utf-8'))
-        f.write(b'\n')
-        for line in top_category_list_1:
-            if line != "":
-                f.write(line.encode('utf-8'))
-                f.write(b'\n')
-        for line in top_category_list_2:
-            if line != "":
-                f.write(line.encode('utf-8'))
-                f.write(b'\n')
-        two_percent = earn_percentage_list[1]
-        f.write(two_percent.encode('utf-8'))
-        f.write(b'\n')
-        for line in two_percent_category_list:
-            if line != "":
-                f.write(line.encode('utf-8'))
-                f.write(b'\n')
+        if earn_percentage_list:
+            top_percent = earn_percentage_list[-2][0]
+            f.write(top_percent.encode('utf-8'))
+            f.write(b'\n')
+            for line in top_category_list_1:
+                if line != "":
+                    f.write(line.encode('utf-8'))
+                    f.write(b'\n')
+            for line in top_category_list_2:
+                if line != "":
+                    f.write(line.encode('utf-8'))
+                    f.write(b'\n')
+            two_percent = earn_percentage_list[-1][0]
+            f.write(two_percent.encode('utf-8'))
+            f.write(b'\n')
+            for line in two_percent_category_list:
+                if line != "":
+                    f.write(line.encode('utf-8'))
+                    f.write(b'\n')
+        else:
+            top_percent = None
 
     bucket_folders = supabase.storage.from_(bucket_name).list()
     folder_exists = folder_name in map(lambda d: d['name'], bucket_folders)

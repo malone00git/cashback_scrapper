@@ -5,8 +5,9 @@ import calendar
 import re
 import json
 from supabase import create_client, Client
+from extra.extract_places import parse_category
 
-with open("discover_it_strings.json", "r") as f:
+with open("../discover_it_strings.json", "r") as f:
     strings = json.load(f)
 
 url: str = os.environ.get("SUPABASE_URL")
@@ -21,17 +22,17 @@ bucket_name = strings["BUCKET_NAME"]
 month_year_pattern = strings["MONTH_YEAR_PATTERN"]
 unknown_category = strings["UNKNOWN_CATEGORY"]
 
-# download categories file from the database
+# Download categories file from the database
 with open(local_file_categories, "wb+") as f:
     result = supabase.storage.from_(bucket_name).download(sup_file_path_categories)
     f.write(result)
 
-# download quarters file form the database
+# Download quarters file form the database
 with open(local_file_quarters, "wb+") as f:
     result = supabase.storage.from_(bucket_name).download(sup_file_path_quarters)
     f.write(result)
 
-# empty list to store the formatted dates for database insertion
+# Empty list to store the formatted dates for database insertion
 formatted_dates = []
 
 with open(local_file_quarters) as f:
@@ -59,43 +60,68 @@ with open(local_file_quarters) as f:
                 # Append the start and end dates to the formatted dates list
                 formatted_dates.append([start_date, end_date])
 
-# retrieve the id and card names from their respective columns
-known_cards = supabase.table('known_credit_card').select('id', 'known_card_name').execute()
+# Retrieve the id and card names from their respective columns
+known_cards = supabase.table('known_credit_card').select('kcc_id', 'known_card_name').execute()
 known_cards = known_cards.data
 card_exists = 'Discover It' in map(lambda d: d['known_card_name'], known_cards)
 
-# if card exists, retrieve its row within the table
+# If card exists, retrieve its row within the table
 if card_exists:
     card_dict = next(filter(lambda d: d['known_card_name'] == 'Discover It', known_cards))
-    kcc_id = card_dict['id']
+    kcc_id = card_dict['kcc_id']
 else:
     data1, count = supabase.table("known_credit_card").insert({"known_card_name": "Discover It",
-                                                               'kb_id': 123, 'kn_id': 4}).execute()
-    kcc_id = data1[1][0]['id']
+                                                               'kb_id': 2, 'kn_id': 4}).execute()
+    kcc_id = data1[1][0]['kcc_id']
+
+# Extract known dates from the database
+known_category_data = supabase.table('known_category_detail').select('kcc_id', 'cat_name',
+                                                                     'start_date', 'end_date').execute().data
+id_exists = kcc_id in map(lambda d: d['kcc_id'], known_category_data)
+
+
+# Remove 'and' from the beginning of a string
+def clean_row(curr_row):
+    split_row = curr_row.split()
+    if split_row[0] == 'and':
+        curr_row = curr_row[3:].strip()
+    return curr_row
+
 
 with open(local_file_categories) as f:
     reader = csv.reader(f)
     index = 0
-    for row in reader:  # for each line within the file
-        if row[0] != unknown_category:  # skip 'Coming soon' rows
+    for row in reader:  # For each line within the file
+        if row[0] != unknown_category:  # Skip 'Coming soon' rows
             start_month = formatted_dates[index][0]
             end_month = formatted_dates[index][1]
 
-            # extract known dates from the database
-            known_category_data = supabase.table('category').select('kcc_id', 'start_date', 'end_date').execute()
-            known_category_data = known_category_data.data
-
-            # check to see if the id, start, and end date exists within the database
+            # Check to see if the id, start, and end date exists within the database
             start_exists = start_month in map(lambda d: d['start_date'], known_category_data)
             end_exists = end_month in map(lambda d: d['end_date'], known_category_data)
-            id_exists = kcc_id in map(lambda d: d['kcc_id'], known_category_data)
 
-            # if kcc_id, start date, end date exists within category table do not insert
-            if start_exists and end_exists and id_exists:
-                pass
-            else:  # else insert new category
-                data2, count = supabase.table("category_name").insert({"cat_name": row[0]}).execute()
-                cn_id = data2[1][0]["id"]
-                supabase.table("category").insert({"kcc_id": kcc_id, "cn_id": cn_id, "cat_percentage": 5,
-                                                   "start_date": start_month, "end_date": end_month}).execute()
+            for i in range(len(row)):
+                cat_exists = row[i] in map(lambda d: d['cat_name'], known_category_data)
+                if start_exists and end_exists and id_exists and cat_exists:
+                    pass
+                else:
+                    this_row = row[i].strip()
+                    cleaned_row = clean_row(this_row)
+                    places_found = parse_category(cleaned_row)
+                    place_types_string = ', '.join(places_found)
+                    supabase.table("known_category_detail").upsert(
+                        {
+                            "kcc_id": kcc_id,
+                            "cat_name": cleaned_row,
+                            "cat_percentage": 5,
+                            "start_date": start_month,
+                            "end_date": end_month,
+                            "place_type": place_types_string
+                        },
+                        on_conflict="kcc_id, cat_name, start_date, end_date").execute()
         index += 1
+try:
+    pass
+finally:
+    os.remove(local_file_quarters)
+    os.remove(local_file_categories)

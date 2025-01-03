@@ -21,7 +21,7 @@ def send_email():
     global error_code
     email = os.getenv('GMAIL_EMAIL')
     password = os.getenv('GMAIL_PASSWORD')
-    print(email, password)
+    # print(email, password)
     sender_email = email
     receiver_email = email
     password = password
@@ -46,5 +46,3 @@ def send_email():
     except smtplib.SMTPException as e:
         print(f'Failed to send email: {e}')
 
-
-send_email()

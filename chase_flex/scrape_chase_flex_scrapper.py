@@ -1,19 +1,17 @@
 import os
 import json
-from supabase import create_client, Client
+import re
 from scrapingant_client import ScrapingAntClient
+from supabase import create_client, Client
 from bs4 import BeautifulSoup
 from extra import email_scrape_failed
 
 
-# strip categories within the list of unnecessary symbols, punctuation, and words
-def format_category_list():
+# Strip categories within the list of unnecessary symbols, punctuation, and words
+def parse_category_list():
     for i in range(len(category_list)):
         category_list[i] = category_list[i].strip()
-        category_list[i] = category_list[i].replace("(", "")
-        category_list[i] = category_list[i].replace(")", "")
-        category_list[i] = category_list[i].replace("*", "")
-        category_list[i] = category_list[i].replace("®", "")
+        category_list[i] = re.sub(r'\*+\s*', " ", category_list[i])
         category_list[i] = category_list[i].replace(replace_this_string_1, "")
 
 
@@ -37,8 +35,10 @@ folder_name = strings["FOLDER_NAME"]
 file_name = strings["FILE_NAME"]
 html_parser = strings["HTML_PARSER"]
 
-url = os.getenv('SUPABASE_URL')
+# Initialize the supabase client with url and key
 key = os.getenv('SUPABASE_KEY')
+url = os.getenv('SUPABASE_URL')
+
 supabase: Client = create_client(url, key)
 
 scraping_ant_token = os.getenv('SCRAPING_ANT_TOKEN')
@@ -47,54 +47,56 @@ response = client.general_request(credit_card_url)
 
 if response.status_code == 200:
 
-    # seek out the necessary data from the website and scrap it
+    # Seek out the necessary data from the website and scrap it
     soup = BeautifulSoup(response.content, html_parser)
     benefit_months = soup.select(find_benefits_month_range)
     benefit_months_list = [benefit_month.getText() for benefit_month in benefit_months]
-    benefit_year_data = soup.select_one(find_benefits_year)
-    string_with_year = benefit_year_data.getText()
-    year_part = string_with_year.split(" ")[-1][-4:]
+    benefit_year_data = soup.select(find_benefits_year)
+    string_with_year = benefit_year_data[0].getText()
+    print(string_with_year)
+    year_part = string_with_year.split(" ")[1]
 
-    # write to local quarters file
+    # Write to local quarters file
     with open(local_file_quarters, 'wb') as f:
-        for data in benefit_months_list:
+        for data in benefit_months_list[:4]:
             months_part = data
             date_text = months_part + " " + year_part
             f.write(date_text.encode())
             f.write(b"\n")
 
-    # check to see if the folder exists
+    # Check to see if the folder exists
     bucket_folders = supabase.storage.from_(bucket_name).list()
     folder_exists = folder_name in map(lambda d: d['name'], bucket_folders)
 
-    # open local quarters file to read
+    # Open local quarters file to read
     with open(local_file_quarters, 'rb') as f:
         if folder_exists:
-            # if the file exist in supabase, update the content
+            # if the file exists in supabase, update the content
             supabase.storage.from_(bucket_name).update(file=f, path=sup_file_path_quarters,
                                                        file_options={'content-type': 'text/plain', 'upsert': 'true'})
-        else:  # else create the file, then write to it
+        else:  # Else create the file, then write to it
             supabase.storage.from_(bucket_name).upload(file=f, path=sup_file_path_quarters,
                                                        file_options={'content-type': 'text/plain', 'upsert': 'true'})
 
-    # seek out the necessary data from the website and scrap it
+    # Seek out the necessary data from the website and scrap it
     categories = soup.select(find_benefits_categories)
     category_list = [category.getText() for category in categories]
 
-    # remove unnecessary symbols, punctuation, and words
-    format_category_list()
+    # Remove unnecessary symbols, punctuation, and words
+    parse_category_list()
 
-    # write to local categories file
-    with open(local_file_categories, 'wb') as f:
-        for data in category_list:
+    # Write new data to the file
+    with open(local_file_categories, "wb") as f:
+        for data in category_list[:4]:  # Only want the first four elements
+            data = data.strip()
             f.write(data.encode())
-            f.write(b'\n')
+            f.write(b"\n")
 
-    # check to see if the file exists
+    # Check to see if the file exists
     file_list = supabase.storage.from_(bucket_name).list(folder_name)
     file_exists = file_name in map(lambda d: d['name'], file_list)
 
-    # open local categories file to read.
+    # Open local categories file to read.
     with open(local_file_categories, 'rb') as f:
         # if the file exist in supabase, update the content
         if file_exists:
@@ -103,11 +105,12 @@ if response.status_code == 200:
         else:  # else create the file, then write to it
             supabase.storage.from_(bucket_name).upload(file=f, path=sup_file_path_categories,
                                                        file_options={'content-type': 'text/plain', 'upsert': 'true'})
-    try:
-        pass
-    finally:  # delete local categories and quarters files
-        os.remove(local_file_quarters)
-        os.remove(local_file_categories)
+    # try:
+        # pass
+    # finally:
+        # delete local categories and quarters files
+        # os.remove(local_file_quarters)
+        # os.remove(local_file_categories)
 
 else:
     # handle the error

@@ -7,7 +7,7 @@ from extra import email_scrape_failed
 
 
 # format the list for database entry
-def format_category_list():
+def parse_category_list():
     # replace all commas with newline character so categories will be inserted and read from a file correctly
     for i in range(len(eligible_top_cat_list)):
         eligible_top_cat_list[i] = eligible_top_cat_list[i].replace('5% eligible categories: ', '')
@@ -44,7 +44,7 @@ if response.status_code == 200:
     eligible_top_categories = soup.select('p.text-description')
     eligible_top_cat_list = [this_list.getText().strip() for this_list in eligible_top_categories]
 
-    format_category_list()
+    parse_category_list()
 
     with open(local_file_categories, 'wb') as f:
         top_percentage = earn_percentage_list[0][0]
@@ -63,6 +63,10 @@ if response.status_code == 200:
         else:
             supabase.storage.from_(bucket_name).upload(file=f, path=sup_file_path_categories,
                                                        file_options={'content-type': 'text/plain', 'upsert': 'true'})
+    # try:
+        # pass
+    # finally:
+        # os.remove(local_file_categories)
 
 else:
     # handle the error

@@ -5,7 +5,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-with open("discover_it_strings.json", "r") as f:
+with open("../discover_it_strings.json", "r") as f:
     strings = json.load(f)
 
 # Various strings to insert into function(s):
@@ -26,6 +26,7 @@ with webdriver.Edge(options=options) as driver:  # create a driver instance with
     wait.until(EC.visibility_of_element_located((By.CLASS_NAME, class_offer_quarter)))
     # Find all the h2 tags with class "offer-quarter"
     quarter_dates = driver.find_elements(By.CSS_SELECTOR, oq_tag_class)
+    print(quarter_dates)
     quarter_dates_list = [quarter_date.get_attribute("textContent") for quarter_date in quarter_dates]
 
     # Open a file named "discover_it_quarters.txt" for writing using try-with-resources
@@ -38,6 +39,7 @@ with webdriver.Edge(options=options) as driver:  # create a driver instance with
     # Find all the h3 tags with class "offer-name"
     categories = driver.find_elements(By.CSS_SELECTOR, on_tag_class)
     category_list = [category.get_attribute("textContent") for category in categories]
+    print(category_list)
 
     # Open a file named "discover_it_categories.txt" for writing using try-with-resources
     with open(local_file_categories, "wb") as f:
